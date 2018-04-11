@@ -1,0 +1,3 @@
+[submodule "note/pandoc-bootstrap-template"]
+	path = note/pandoc-bootstrap-template
+	url = git@github.com:chftyrol/pandoc-bootstrap-template.git
