@@ -1,0 +1,8 @@
+#!/usr/bin/sh
+
+cd "$(dirname $0)"
+echo "Crunching Markdown to cool html..."
+
+pandoc --mathml -f markdown+line_blocks -o ../docs/index.html --template pandoc-bootstrap-template/template.html --css pandoc-bootstrap-template/template.css --self-contained --toc --toc-depth 2 *.md
+
+echo "Done."
