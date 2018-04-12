@@ -4,6 +4,7 @@
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
   <meta http-equiv="Content-Style-Type" content="text/css" />
   <meta name="generator" content="pandoc" />
+  <meta name="author" content="12/4/2018" />
   <title>Dinamica Molecolare</title>
   <style type="text/css">code{white-space: pre;}</style>
   <style type="text/css">
@@ -3050,6 +3051,7 @@ color: #666;
       <div class="container">
         <span class="doc-title">Dinamica Molecolare</span>
         <ul class="nav pull-right doc-info">
+                    <li><p class="navbar-text">12/4/2018</p></li>
                             </ul>
       </div>
     </div>
@@ -3072,7 +3074,10 @@ color: #666;
         <li><a href="#evoluzione-temporale">Evoluzione Temporale</a></li>
         <li><a href="#risultati">Risultati</a></li>
         <li><a href="#termodinamica">Termodinamica</a></li>
-        <li><a href="#partenza">Partenza</a></li>
+        <li><a href="#calcolo-di-osservabili">Calcolo di Osservabili</a></li>
+        <li><a href="#warning-ed-errori">Warning ed Errori</a></li>
+        <li><a href="#reinizializzare-la-simulazione">Reinizializzare la simulazione</a></li>
+        <li><a href="#il-codice-di-lammps">Il codice di Lammps</a></li>
         </ul></li>
         </ul>
         </div>
@@ -3092,7 +3097,7 @@ color: #666;
 </ul>
 <h2 id="regione-di-simulazione">Regione di simulazione</h2>
 <p>Di norma voglio condizioni periodiche. Con lammps, si definisce prima il reticolo (con il comando <code>lattice</code>), poi la regione: in questo modo lammps sa come applicare le condizioni periodiche al bordo.</p>
-<div class="line-block">Vai a vederti il comando <code>lattice</code> e capisci come cambiare il valore specificato se vengono modificate le unità, in modo da mantenere le condizioni iniziali di equilibrio del sistema.</div>
+<div class="line-block"><strong>Esercizio</strong>: Vai a vederti il comando <code>lattice</code> e capisci come cambiare il valore specificato se vengono modificate le unità, in modo da mantenere le condizioni iniziali di equilibrio del sistema.</div>
 <p>Con il comando <code>region</code> si può specificare, in ordine:</p>
 <ol type="1">
 <li>Il nome della regione. Qui di default si chiama <em>box</em>.</li>
@@ -3120,7 +3125,7 @@ color: #666;
 <p>Con il comando <code>pair_coeff</code> specifichiamo che le particelle di tipo 1 con quelle di tipo 1 sono date dai coefficienti che seguono (che dipendono dal tipo di interazione che sto utilizzando: ad esempio profondità e posizione della buca di potenziale nel nostro caso).</p>
 <h2 id="clustering">Clustering</h2>
 <p>Con il comando <code>neighbor</code> si specifica come si costruiscono le liste di primi vicini. Nel nostro caso <em>0.3 bin</em> sta facendo un binning spaziale, aggiungendo 0.3 come <em>skin distance</em>.</p>
-<p><strong>Nota</strong>: I comandi di tipo <em>_modify</em> modificano i parametri di default dei comandi che vanno a modificare.</p>
+<div class="line-block"><strong>Nota</strong>: I comandi di tipo <em>_modify</em> modificano i parametri di default dei comandi che vanno a modificare.</div>
 <h2 id="evoluzione-temporale">Evoluzione Temporale</h2>
 <p>Il comando <code>fix</code> permette di fissare una condizione, fino a che esplicitamente questa non viene abbandonata. In questo caso fissa l’integratore temporale da utilizzare. La sintassi è <code>fix &lt;nome_del_fix&gt; &lt;gruppo_di_atomi&gt; &lt;cosa_fixiamo&gt;</code>, il cosa fixiamo è specificato mediante particolari parole chiave, documentate.</p>
 <p>In questo caso fixiamo l’integratore <code>nve</code> che tiene costante numero di particelle, velocità ed energia.</p>
@@ -3130,9 +3135,43 @@ color: #666;
 <p>Lammps sa che se nel nome del file ci sono degli slash rappresentano sotto-cartelle (ma non le crea).</p>
 <h2 id="termodinamica">Termodinamica</h2>
 <p>Con il comando <code>thermo</code> posso chiedere a lammps di stampare informazioni di termodinamica ogni tanto.</p>
-<h2 id="partenza">Partenza</h2>
-<p>Con il comando <code>run &lt;numero_di_step&gt;</code> si fa girare la simulazione per il numero di step specificato.</p>
+<p>Se ho definito delle variabili con <code>variable</code> posso printarle in questo modo oppure utilizzando <code>fixprint</code>. ## Partenza Con il comando <code>run &lt;numero_di_step&gt;</code> si fa girare la simulazione per il numero di step specificato.</p>
 <p>Dopo questo comando si possono specificare altri comandi, di modo eventualmente da far fare altre cose a lammps (magari un’altra simulazione con parametri diversi).</p>
+<h2 id="calcolo-di-osservabili">Calcolo di Osservabili</h2>
+<p>Una osservabile va definita nella sua espressione mediante un comando <code>variable</code>. Le variabili possono essere di due tipi:</p>
+<ul>
+<li><code>equal</code>: scalare/vettore intensivo.</li>
+<li><code>atom</code>: vettore di lunghezza pari al numero degli atomi in questo momento presenti nel sistema. Esempio di utilizzo: per assegnare una carica a ciascun atomo.</li>
+</ul>
+<p>Nella definizione di variabili posso scrivere delle espressioni definitorie: ci sono (predefinite) alcune funzioni che aiutano in questo.</p>
+<div class="line-block"><strong>Nota:</strong> è possibile che lammps lanci un errore riguardo una “variable not current” e rifiutarsi di stamparla. Questo perché lammps è implementato risparmiando sui controlli sui dati di input. Ad esempio quando io, in Python o in altri modi, scrivo una funzione che calcola un’osservabile, lammps non calcola questa funzione ad ogni passo (per ragioni di ottimizzazione). Lammps fa girare la funzione e inizializza le variabili quando gli chiedo di stamparla tramite <code>thermo</code> o <code>fixprint</code>.</div>
+<p>Normalmente è migliore pratica calcolare (e quindi printare) le osservabili in fase di <em>post-processing</em>, di modo da non rallentare i conti sullo stato dinamico del sistema.</p>
+<h2 id="warning-ed-errori">Warning ed Errori</h2>
+<p>Quando si riscontra un errore, cercare online. La risorsa più utile è la mailing list di lammps: gli sviluppatori sono disponibili.</p>
+<p>Lammps dà <em>warnings</em> quando trova qualche cosa di inatteso nel far girare la simulazione. Tipicamente, quelli più sintomatici di una dinamica problematica sono i <em>warning</em> che lamentano che le liste dei primi vicini sono dovute essere aggiornate e quelli che avvisano che un atomo si è mosso di una quantità irragionevole.</p>
+<h2 id="reinizializzare-la-simulazione">Reinizializzare la simulazione</h2>
+<p>Di norma, lammps legge il file di input e poi esegue in maniera sequenziale le istruzioni. Esistono tuttavia dei comandi che permettono di salvare le impostazioni locali e di riprendere la simulazione (in maniera più o meno esatta).</p>
+<p>Ad esempio: so che devo fare una simulazione che dura una settimana. Se dopo pochi giorni salta la corrente io perdo le informazioni. Oppure può essere utile arrestare la simulazione quando il sistema ha termalizzato (dopo quindi averla sospesa per controllare i valori di alcune variabili dinamiche).</p>
+<p>Per fare queste operazioni si usa la combinazione di <code>dump</code> e <code>read_dump</code>. Quest’ultimo è in grado di recuperare le informazioni sul sistema a partire da un file di dump salvato in precedenza. In questo modo è possibile riprendere l’esecuzione della simulazione con buona precisione. L’accuratezza non è totale perché le variabili vengono dumpate con precisione minore di quella con cui vengono trattate all’interno di lammps.</p>
+<p>Con il comando <code>restart</code> è possibile invece salvare uno snapshot in formato binario: questo contiene <em>precisamente</em> le informazioni così come erano contenute nella memoria di lammps. In questo modo si può così riprendere la stessa traiettoria in spazio delle fasi che si stava percorrendo in precedenza.</p>
+<div class="line-block"><strong>Caveat</strong>: gli snapshot binari generati sono dipendenti dai flag di compilazione di lammps e dall’architettura hardware della macchina in uso.</div>
+<p>Tipicamente uno snapshot viene salvato ogni circa 15 minuti, per assicurarsi che se accade un imprevisto si possono riprendere i calcoli da dove erano stati interrotti.</p>
+<h2 id="il-codice-di-lammps">Il codice di Lammps</h2>
+<p>La struttura del codice è estremamente razionalizzata.</p>
+<p>L’installazione/disinstallazione di estensioni a lammps avviene semplicemente aggiungendo/eliminando alla directory <code>src</code> i file corrispondenti.</p>
+<p>Diamo un occhio a <code>pair_lj_cut.h</code>.</p>
+<p>Aprendolo, notiamo che tutto il codice che parallelizza la computazione è a monte rispetto il codice che implementa le interazioni e gli altri aspetti dinamici.</p>
+<p>Lammps si occupa, in fase di computazione, anche di ricercare il minimo dell’energia.</p>
+<h3 id="pairstyle">PairStyle</h3>
+<p>Questa funzione permette di definire il nome che poi useremo per riferirci a questa funzione dai file di input di lammps.</p>
+<p>Duplichiamo quindi il <code>.h</code> ed il <code>.cpp</code> e:</p>
+<ul>
+<li>rinominiamo la classe <code>PairLJCut</code> in <code>PairLJCut2</code>. Ricorda di cambiare i nomi anche all’inclusione del <code>.h</code> nel <code>.cpp</code> e negli <code>#ifdef</code> che evitano l’inclusione multipla.</li>
+<li>rimpiazziamo l’identificatore <code>PairStyle(lj/cut, PairLJCut)</code> con <code>PairStyle(lj/cut2, PairLJCut2)</code></li>
+</ul>
+<h3 id="compute">Compute</h3>
+<p>È la funzione che effettivamente esegue la computazione.</p>
+<p>All’interno della funzione vi sono molte variabili definite. Una interessante è <code>newton_pair</code>: spesso può essere vantaggioso computazionalmente (per potenziali semplici) ignorare il terzo principio della dinamica e calcolare le forze per tutti oppure (per potenziali complicati) può essere utile assegnare le forze utilizzando il terzo principio.</p>
             </div>
     </div>
   </div>
